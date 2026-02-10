@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Black Net & Network Security Challenge</title>
+
+<style>
+:root{
+    --bg:#050508;
+    --green-strong:#00ff66;
+    --purple-strong:#d19bff;   /* بنفش پررنگ‌تر */
+    --danger:#ff4d6d;
+}
+
+body{
+    background:var(--bg);
+    font-family:Consolas, monospace;
+    color:var(--purple-strong);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.container{
+    width:760px;
+    background:#08080d;
+    border:3px solid var(--green-strong);
+    padding:18px;
+}
+
+h1{
+    text-align:center;
+    color:var(--green-strong);
+    font-size:22px;
+    margin-bottom:14px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+td{
+    border:1px solid var(--green-strong);
+    padding:14px;
+}
+
+#questionBox{
+    font-size:18px;
+    line-height:1.7;
+    white-space:pre-line;
+    min-height:140px;
+    color:var(--purple-strong);
+}
+
+/* ورودی جواب */
+input{
+    width:100%;
+    background:#050508;
+    color:var(--purple-strong);
+    border:1px solid var(--green-strong);
+    padding:14px;
+    font-size:18px;
+    outline:none;
+}
+
+input::placeholder{
+    color:#b388ff;
+}
+
+button{
+    margin-top:12px;
+    padding:10px 28px;
+    background:transparent;
+    color:var(--green-strong);
+    border:1px solid var(--green-strong);
+    font-size:15px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:rgba(0,255,102,0.08);
+}
+
+.error{
+    margin-top:10px;
+    color:var(--danger);
+    font-size:15px;
+}
+
+.footer{
+    text-align:center;
+    margin-top:10px;
+    color:var(--purple-strong); /* فوتر بنفش */
+    font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>Black Net & Network Security Challenge</h1>
+
+<table>
+<tr>
+<td id="questionBox"></td>
+</tr>
+<tr>
+<td>
+<input id="answer" placeholder="Type your answer here">
+<button onclick="nextStage()">NEXT</button>
+<div class="error" id="error"></div>
+</td>
+</tr>
+</table>
+
+<div class="footer">Creator : <b>Miss Network</b></div>
+</div>
+
+<script>
+const LOCK_TIME = 5 * 60 * 60 * 1000;
+const MAX_FAILS = 5;
+
+let stage = Number(localStorage.stage || 0);
+let fails = Number(localStorage.fails || 0);
+let lockUntil = Number(localStorage.lockUntil || 0);
+
+/* ۴۰ مرحله سخت */
+const Q = [
+{q:"LOGIN\n\nEnter initialization keyword.",a:"blacknet-init"},
+{q:"TCP SYN seq=12001\nServer SYN,ACK seq=64000\nACK?",a:"12002"},
+{q:"TTL=1 packet dropped by?",a:"router"},
+{q:"Unsolicited ARP replies flood LAN.\nAttack?",a:"arp spoofing"},
+{q:"DNS TXID mismatch.\nGoal?",a:"poisoning"},
+/* ... ادامه مراحل ... */
+{q:"ARP + DNS + TCP injection combined.\nFinal objective?",a:"mitm"}
+];
+
+function show(){
+    const input = document.getElementById("answer");
+
+    if(Date.now() < lockUntil){
+        let min = Math.ceil((lockUntil - Date.now())/60000);
+        questionBox.innerText =
+            "STAGE LOCKED\n\nToo many wrong answers.\nRetry in " + min + " minutes.";
+        input.disabled = true;
+        return;
+    }
+
+    input.disabled = false;
+    input.focus();
+
+    if(stage >= Q.length){
+        questionBox.innerText = "CHALLENGE COMPLETED";
+        input.disabled = true;
+        return;
+    }
+
+    questionBox.innerText = "Stage " + stage + " / 40\n\n" + Q[stage].q;
+}
+
+function nextStage(){
+    if(Date.now() < lockUntil) return;
+
+    const input = document.getElementById("answer");
+    const userAnswer = input.value.trim().toLowerCase();
+
+    if(userAnswer === Q[stage].a){
+        stage++;
+        fails = 0;
+        localStorage.stage = stage;
+        localStorage.fails = fails;
+        error.innerText = "";
+        input.value = "";
+        show();
+    }else{
+        fails++;
+        localStorage.fails = fails;
+        error.innerText = "Wrong answer (" + fails + "/" + MAX_FAILS + ")";
+
+        if(fails >= MAX_FAILS){
+            lockUntil = Date.now() + LOCK_TIME;
+            localStorage.lockUntil = lockUntil;
+            show();
+        }
+    }
+}
+
+show();
+</script>
+
+</body>
+</html>
